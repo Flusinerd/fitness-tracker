@@ -16,6 +16,8 @@ Weitere Aspekte der Applikation in Bezug zu Kontextarten oder Funktionalitäten 
 
 Im ersten Schritt gilt es zu definieren, inwiefern die verschiedenen Kontextarten in der Applikation zum Einsatz kommen.
 
+<<<
+
 === Kontextarten in der Applikation
 
 * Physikalischer Kontext
@@ -51,6 +53,8 @@ Grundlage eines Entscheidungsbaums ist ein Machine-Learning Workflow, welcher in
 
 Auf die genaue Implementation des Workflows wird im Folgenden näher eingegangen.
 
+<<<
+
 == Datensammlung
 
 Der wichtigste Aspekt bei der Erstellung eines "Classifiers" für Machine-Learning Anwendungen ist die Datenbasis, anhand dessen gelernt wird.
@@ -59,6 +63,9 @@ Idealerweise werden möglichst viele Daten gesammelt von unterschiedlichen Perso
 
 Die Datensammlung in diesem Praktikum wurde durch die bereits gezeigten Datensammler-App aus Praktikum 1 durchgeführt.
 Der Datensammler tastet mit einem Intervall von ca. 45 Mal pro Sekunde die Sensorwerte für Accelerometer, Gyroskop (auf jeweils allen drei Achsen) und zusätzlich die Geschwindigkeit in m/s ab.
+
+Nach der ersten Sammlung an Testdaten ist aufgefallen dass es vorkommen kann, dass nicht zu jedem Zeitpunkt die derzeitige Geschwindigkeit verfügbar ist (z.B. fehlende GPS Verbindung) und daher manchmal auch 0 sein kann.
+Daher wurde entschlossen aus den Daten zwei verschiedene Entscheidungsbäume zu erstellen, jeweils mit und ohne Beachtung der Geschwindigkeit.
 
 So wurden die Daten für die "Gehen", "Rennen" und "Fahrrad fahren" Aktivitäten in getrennten Abläufen gesammelt, um die Daten im Nachgang korrekt manuell klassifizieren und als Testdaten nutzen zu können.
 
@@ -117,7 +124,13 @@ Als Testdaten werden wir ca. ein Drittel der Lerndaten verwenden mit WEKAs Optio
 
 == Evaluation der Modelle
 
-Entscheidungsbaum mit dem Speed Classifier:
+Wie erwähnt sollten aus den gesammelten Testdaten zwei unterschiedliche Entscheidungsbäume erstellt werden die jeweils mit und ohne die Geschwindigkeit trainiert wurden.
+
+Im Folgenden sind beide erstellten Entscheidungsbäume angehangen zusammen mit der Konfusionsmatrix und der Accuracy, die der J48 Algorithmus in WEKA erzeugt hat.
+Um die Anzahl an Verzweigungen zu verringern, wurde als Option im J48 die _minNumObj_ auf insgesamt 20 erhöht.
+Dies bewirkt, dass im Minimum pro Blatt 20 Instanzen aus dem Trainingsdatensatz landen.
+
+Classifier mit Speed:
 
 [source.text]
 ----
@@ -172,9 +185,19 @@ SPEED > 1.831048
 |   VARIANCE_GYRO > 0.048338
 |   |   SPEED <= 2.399872: RUNNING (134.0/9.0)
 |   |   SPEED > 2.399872: BIKING (83.0)
+
+=== Summary ===
+Correctly Classified Instances         916               82.3001 %
+Incorrectly Classified Instances       197               17.6999 %
+
+=== Confusion Matrix ===
+   a   b   c   <-- classified as
+ 410  14  11 |   a = BIKING
+  15 264  75 |   b = RUNNING
+  10  72 242 |   c = WALKING
 ----
 
-Entscheidungsbaum ohne den Speed Classifier:
+Classifier ohne Speed:
 
 [source,text]
 ----
@@ -219,6 +242,51 @@ VARIANCE_GYRO > 0.028435
 |   |   |   VARIANCE_GYRO <= 0.075309: WALKING (153.0/69.0)
 |   |   |   VARIANCE_GYRO > 0.075309: RUNNING (175.0/65.0)
 |   |   VARIANCE_ACC > 18.754174: RUNNING (409.0/88.0)
+
+
+=== Summary ===
+Correctly Classified Instances         750               67.3854 %
+Incorrectly Classified Instances       363               32.6146 %
+
+=== Confusion Matrix ===
+   a   b   c   <-- classified as
+ 390  11  34 |   a = BIKING
+  34 266  54 |   b = RUNNING
+  63 167  94 |   c = WALKING
 ----
 
-== Architektur der Fitness-Tracker Applikation
+<<<
+
+== Fitness-Tracker Applikation
+
+=== Konzeptionelles Mockup
+
+Zu Beginn des Praktikums beinhaltete die Vision, dass die Applikation eine moderne GUI beinhaltet, welche die Daten der letzten Aktivität zeigt und eventuell selbst gesetzte Ziele.
+Durch einen Klick auf einen _"Aktivität starten"_ Button würde eine Aufzeichnung gestartet und die App würde erkennen um welche der trainierten Aktivitäten es sich handeln würde.
+
+Ein frühes Mockup der App zeigt ein solches Dashboard:
+
+image::../images/app-mockup.png[App Mockup,align=center]
+
+=== Architektur
+
+Implementiert wird die App als _**Service-Oriented-Architecture (SOA)**_.
+Das bedeutet, dass Funktionalitäten in einzelne Komponenten (Services) ausgegliedert und verschachtelt werden können.
+Das hat der Vorteil, dass durch die Isolierung von Komponenten Funktionalitäten leichter getestet werden können, sowie Komponenten auch wiederverwendet werden können.
+
+Im Folgenden eine Darstellung der Implementation der SOA für die Applikation:
+
+image::../images/service-architecture.png[Service Architecture]
+
+== Ergebnis
+
+Zum Abschluss des Praktikums wurden auch Live-Tests der App im Freien durchgeführt.
+Der Test beinhaltet die Anzeige der aktuell erkannten Aktivität in der App und wie sehr sie zur eigentlichen Bewegung des Testers passte.
+
+Die Erkennung der Aktivität "_Gehen_" und "_Rennen_" sind größenteils genau gewesen.
+Nur die Aktivität "Fahrrad" wurde während der Tests niemals erkannt.
+Dem Grund dafür auf die Spur zu kommen ist nicht ganz so simpel.
+Es wurde beim Testen darauf geachtet, dass die Position des Gerätes die gleiche wie der des Trainingsdaten-Aufnahmegerätes und die Testperson dieselbe war.
+
+Weiterführende Schritte für die Verbesserung der Erkennung wären eine Neuaufnahme der Trainingsdaten und ein Sammeln einer weitaus größeren Menge an Daten.
+Auch wäre es besser, wenn verschiedene Personen Daten sammeln und die Aufnahmegeräte an unterschiedlichen Positionen getragen werden würden.
